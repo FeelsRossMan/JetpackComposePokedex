@@ -22,7 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PokemonListViewModel @Inject constructor(
     private val repository: PokemonRepository
-): ViewModel() {
+) : ViewModel() {
 
     private var curPage = 0
 
@@ -41,16 +41,15 @@ class PokemonListViewModel @Inject constructor(
     }
 
     //TODO: Cache all the pokemon so that the search goes everywhere.
-    //  Fix the bug where after searching, pagination stops happening
 
     fun searchPokemonList(query: String) {
-        val listToSearch = if(isSearchStarting) {
+        val listToSearch = if (isSearchStarting) {
             pokemonList.value
         } else {
             cachedPokemonList
         }
         viewModelScope.launch(Dispatchers.Default) {
-            if(query.isEmpty()) {
+            if (query.isEmpty()) {
                 Log.d("ViewModel", "Empty search bar")
                 pokemonList.value = cachedPokemonList
                 isSearching.value = false
@@ -61,7 +60,7 @@ class PokemonListViewModel @Inject constructor(
                 it.pokemonName.contains(query.trim(), ignoreCase = true) ||
                         it.number.toString() == query.trim()
             }
-            if(isSearchStarting) {
+            if (isSearchStarting) {
                 cachedPokemonList = pokemonList.value
                 isSearchStarting = false
             }
@@ -72,17 +71,18 @@ class PokemonListViewModel @Inject constructor(
 
     fun loadPokemonPaginated() {
         viewModelScope.launch {
-            val result = repository.getPokemonList(PAGE_SIZE,curPage * PAGE_SIZE)
-            when(result) {
+            val result = repository.getPokemonList(PAGE_SIZE, curPage * PAGE_SIZE)
+            when (result) {
                 is Resource.Success -> {
                     endReached.value = curPage * PAGE_SIZE >= result.data!!.count
                     val pokedexEntries = result.data.results.mapIndexed { index, entry ->
-                        val number = if(entry.url.endsWith("/")) {
+                        val number = if (entry.url.endsWith("/")) {
                             entry.url.dropLast(1).takeLastWhile { it.isDigit() }
                         } else {
                             entry.url.takeLastWhile { it.isDigit() }
                         }
-                        val url = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${number}.png"
+                        val url =
+                            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${number}.png"
                         PokedexListEntry(entry.name.capitalize(Locale.ROOT), url, number.toInt())
                     }
                     curPage++
